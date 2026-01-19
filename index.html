@@ -1,0 +1,45 @@
+// JRK AI 💀🔥 - CORE ENGINE
+const { default: makeWASocket, useMultiFileAuthState, delay } = require("@whiskeysockets/baileys");
+const pino = require("pino");
+
+async function startJRK() {
+    const { state, saveCreds } = await useMultiFileAuthState('auth_info_jrk');
+    
+    const sock = makeWASocket({
+        auth: state,
+        printQRInTerminal: true,
+        logger: pino({ level: "silent" })
+    });
+
+    sock.ev.on('creds.update', saveCreds);
+
+    sock.ev.on('messages.upsert', async m => {
+        const msg = m.messages[0];
+        if (!msg.message || msg.key.fromMe) return;
+
+        const content = msg.message.conversation || msg.message.extendedTextMessage?.text;
+        const sender = msg.key.remoteJid;
+
+        // Commande .automess
+        if (content?.startsWith('.automess')) {
+            // Logique de stockage en DB (ex: MongoDB)
+            await sock.sendMessage(sender, { text: "📥 *JRK AI* : Message automatique enregistré avec succès." });
+        }
+
+        // Commande .vv (View Once Bypass/Save)
+        if (msg.message.viewOnceMessageV2 || msg.message.viewOnceMessage) {
+            console.log("📥 Vue unique détectée. Analyse du déclencheur...");
+            // Si l'utilisateur réagit avec un emoji (logique à compléter avec ev.on 'messages.reaction')
+            // Code pour renvoyer le média au propre numéro de l'utilisateur
+        }
+
+        // IA JRK ENGINE - Traitement des questions
+        if (!content?.startsWith('.')) {
+            const aiResponse = await processJRK_AI(content);
+            await delay(2000); // Anti-Spam Delay
+            await sock.sendMessage(sender, { text: `💀🔥 *𝕵𝕽𝕶 𝖆𝖎* : ${aiResponse}` });
+        }
+    });
+}
+
+startJRK();
